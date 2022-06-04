@@ -1,0 +1,4 @@
+{
+  "name": "stored_data",
+  "path": "M x+w*0.15 y A w*0.15 h*0.5 0 0 0 x+w*0.15 y+h L x+w y+h A w*0.15 h*0.5 0 0 1 x+w y L x+w*0.15 y"
+}

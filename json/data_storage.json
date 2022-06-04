@@ -1,0 +1,20 @@
+{
+  "name": "data_storage",
+  "control_point_num": "1",
+  "path": "M x y A Control.w h*0.7 0 0 1 x y+h L x+w-Control.w y+h A Control.w h*0.7 0 0 0 x+w-Control.w y L x y",
+  "controls": [
+    {
+      "control_name": "Control",
+      "default_position": {
+        "default_x": "x+w*0.25",
+        "default_y": "y+h*0.5"
+      },
+      "move_method": "0",
+      "move_update": "1",
+      "x_range": {
+        "min": "x",
+        "max": "x+w"
+      }
+    }
+  ]
+}

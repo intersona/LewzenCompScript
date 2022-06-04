@@ -1,0 +1,21 @@
+{
+  "name": "preparation",
+  "control_point_num": "1",
+  "path": "M x y+h*0.5 L Control.x y L x+w-Control.w y L x+w y+h*0.5 L x+w-Control.w y+h L Control.x y+h L x y+h*0.5",
+  "controls": [
+    {
+      "control_name": "Control",
+      "default_position": {
+        "default_x": "x+w*0.25",
+        "default_y": "y+h*0.5"
+      },
+      "move_method": "0",
+      "move_update": "0",
+      "x_range": {
+        "min": "x",
+        "max": "x+w*0.5"
+      }
+    }
+  ]
+}
+

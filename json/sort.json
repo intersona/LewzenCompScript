@@ -1,0 +1,4 @@
+{
+  "name": "sort",
+  "path": "M x y+h*0.5 L x+w y+h*0.5 L x+w*0.5 y L x y+h*0.5 L x+w*0.5 y+h L x+w y+h*0.5"
+}

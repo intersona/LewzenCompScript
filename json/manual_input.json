@@ -1,0 +1,22 @@
+{"name": "manual_input",
+  "control_point_num": "1",
+  "path": "M x+w y L x+w y+h L x y+h L x y+ch*1.25 L x+w y",
+  "controls": [
+    {
+      "default_position": {
+        "default_x": "x+w*0.2",
+        "default_y": "y+h*0.2"
+      },
+      "move_method": "1",
+      "move_update": "1",
+      "x_range": {
+        "min": "x+w*0.5",
+        "max": "x+w"
+      },
+      "y_range": {
+        "min": "y",
+        "max": "y+h*0.8"
+      }
+    }
+  ]
+}

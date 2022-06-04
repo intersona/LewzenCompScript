@@ -1,0 +1,22 @@
+{"name": "tee",
+  "control_point_num": "1",
+  "path": "M x y L x+w y L x+w cy L x+w-cw cy L x+w-cw y+h L cx y+h L cx cy L x cy L x y",
+  "controls": [
+    {
+      "default_position": {
+        "default_x": "x+w*0.6",
+        "default_y": "y+h*0.2"
+      },
+      "move_method": "2",
+      "move_update": "1",
+      "x_range": {
+        "min": "x",
+        "max": "x+w*0.5"
+      },
+      "y_range": {
+        "min": "y",
+        "max": "y+h"
+      }
+    }
+  ]
+}

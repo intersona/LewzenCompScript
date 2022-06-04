@@ -1,0 +1,43 @@
+{
+  "name": "big_arrow_left",
+  "control_point_num": "2",
+  "path": "M x abc.y L abc.x abc.y L abc.x y L x+w y+h*0.5 L abc.x y+h L abc.x y+h-abc.h L x y+h-abc.h L cde.x cde.y L x abc.y",
+  "controls": [
+    {
+      "control_name": "abc",
+      "default_position": {
+        "default_x": "x+w*0.75",
+        "default_y": "y+h*0.25"
+      },
+      "move_method": "2",
+      "move_update": "1",
+      "x_range": {
+        "min": "x",
+        "max": "x+w"
+      },
+      "y_range": {
+        "min": "y",
+        "max": "y+h*0.5"
+      },
+      "constrain": "if($abc.x<$cde.x){$abc->setX($cde.x);}"
+    },
+    {
+      "control_name": "cde",
+      "default_position": {
+        "default_x": "x",
+        "default_y": "y+h*0.5"
+      },
+      "move_method": "0",
+      "move_update": "1",
+      "x_range": {
+        "min": "x",
+        "max": "x+w"
+      },
+      "y_range": {
+        "min": "y",
+        "max": "y+h"
+      },
+      "constrain": "if($cde.x>$abc.x){$cde->setX($abc.x);}"
+    }
+  ]
+}
