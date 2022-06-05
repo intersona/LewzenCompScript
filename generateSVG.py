@@ -1,6 +1,6 @@
 import re
 
-SVG_PATH = 'svg\\'
+SVG_PATH = '.\\svg\\'
 global sym2num
 
 sym2num = {'x': '0', 'y': '0', 'w': '200', 'h': '200'}
@@ -125,7 +125,7 @@ def parse_position(point, controls):
     return position
 
 
-def generateSVG(comp, path, controls, flag):
+def generateSVG(comp, path, write_area, controls, flag):
     out = ''
     arr = path.split(' ')
     if flag == 'cpp':
@@ -141,7 +141,7 @@ def generateSVG(comp, path, controls, flag):
     for sym in arr:
         out += str(sym)
         out += ' '
-    return generate_file(comp, out)
+    return generate_file(comp, out, write_area, controls)
 
 
 '''
@@ -157,15 +157,19 @@ control.h:control->getY()-getY():0+100*px
 import os
 
 
-def generate_file(comp_name, path):
+def generate_file(comp_name, path, wa, controls):
     svg = '''<svg xmlns="http://www.w3.org/2000/svg">
      <g>
       <g stroke=" black" fill=" white" stroke-width="1">
+      <rect x="%s" y="%s" width="%s" height="%s fill="none"/>
        <path d="%s" id="svg_1"/>
       </g>
      </g>
 
-    </svg>''' % path
+    </svg>''' % (
+        parse_position(wa[0], controls), parse_position(wa[1], controls), parse_position(wa[2], controls),
+        parse_position(wa[3], controls),
+        path)
     current_path = os.path.abspath(__file__)
     parent_path = os.path.abspath(os.path.dirname(current_path) + os.path.sep + ".")
     with open(SVG_PATH + comp_name + '.svg', 'w+', encoding='utf-8') as f:
@@ -184,4 +188,4 @@ if __name__ == '__main__':
     generateSVG(
         comp_name,
         'M x abc.y L abc.x abc.y L abc.x y L x+w y+h*0.5 L abc.x y+h L abc.x y+h-abc.h L x y+h-abc.h L cde.x cde.y L x abc.y',
-        controls)
+        ['x', 'y', 'w', 'h'], controls, 'cpp')

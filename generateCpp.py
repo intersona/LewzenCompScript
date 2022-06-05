@@ -89,6 +89,9 @@ h_code_tail = '''
         virtual void serialize(json &j, std::vector<std::string> &processed) override;
         // 反序列化
         virtual ComponentAbstract &operator=(const json &j) override;
+        
+        //// Writable虚接口
+        virtual const ComponentWritable::WriteArea getWriteArea() override;
 
         //// Basics virtual interface
         virtual void moveCorePoint(const std::string &id, const double &dx, const double &dy) override;
@@ -243,6 +246,20 @@ def get_inverse_serialize(if_control, c_name, conditions):
     return iserialize
 
 
+def get_write_area(write_area):
+    area = '''    //// Writable虚接口
+    const ComponentWritable::WriteArea Rectangle::getWriteArea() {
+        return {
+            %s,
+            %s,
+            %s,
+            %s
+        };
+    }\n''' % (parse_position(write_area[0]), parse_position(write_area[1]), parse_position(write_area[2]),
+              parse_position(write_area[3]))
+    return area
+
+
 def get_move(c_name, if_control, conditions):
     move = '''    //// Basics虚接口
     void %s::moveCorePoint(const std::string &id, const double &dx, const double &dy) {\n''' % c_name
@@ -276,6 +293,7 @@ def get_move(c_name, if_control, conditions):
             if condition[1][0] == '3':
                 move += '''            *%s += createPoint(dx, dx);\n''' % control_name
             move += '''            corePointMoving = false;\n'''
+            # add constrains
             if len(condition) == 6:
                 move += parse_constrain(condition[5])
             move += '        }\n'
@@ -355,7 +373,7 @@ def get_move(c_name, if_control, conditions):
 
 
 # control相关：init；copy；反serialize；move
-def get_cpp_code(if_c, o_name, path_code, conditions):
+def get_cpp_code(if_c, o_name, path_code, conditions, write_area):
     c_name = parse_name(o_name)
     output = '''#include "%s.h"
 
@@ -369,6 +387,8 @@ namespace LewzenServer {
     output += get_serialize(c_name)
 
     output += get_inverse_serialize(if_c, c_name, conditions)
+
+    output += get_write_area(write_area)
 
     output += get_move(c_name, if_c, conditions)
 
@@ -699,8 +719,17 @@ def main(argv):
             default_generate()
 
 
+global write_area
+write_area = ['x', 'y', 'h', 'w']
+
+
+class JsonException(Exception):
+    def __init__(self, reason):
+        self.reason = reason
+
+
 def get_comp_by_json(path):
-    global control_num
+    global control_num, write_area
     # input0 = input()
     # print("input:" + input0)
     # print("arg:" + arg)
@@ -730,51 +759,51 @@ def get_comp_by_json(path):
         for condition_json in data['controls']:
             if not condition_json.__contains__('control_name'):
                 print('need control name')
-                exit()
+                raise Exception
             control_name = condition_json['control_name']
             if control_names.__contains__(control_name):
-                print('wrong control name')
-                exit()
+                raise JsonException('wrong control name')
             if control_name[0] in ['x', 'y', 'w', 'h']:
-                print('initial character not legal')
-                exit()
+                raise JsonException('initial character not legal')
             else:
                 control_names.append(control_name)
             if not condition_json.__contains__('default_position'):
-                print('wrong default position')
-                exit()
+                raise JsonException('wrong default position')
             controls_arr_for_svg.append([control_name, condition_json["default_position"]["default_x"],
-                                         condition_json["default_position"]["default_y"]])
+                                         condition_json["default_position"]["default_y"],
+                                         condition_json['x_range'] if condition_json.__contains__('x_range') else [],
+                                         condition_json['y_range'] if condition_json.__contains__('y_range') else []])
             control_position = [parse_position(condition_json["default_position"]["default_x"]),
                                 parse_position(condition_json["default_position"]["default_y"])]
 
             if not condition_json.__contains__('move_method') or \
                     condition_json["move_method"] not in ['0', '1', '2', '3']:
-                print('wrong move_method')
-                exit()
+                raise JsonException('wrong move_method')
+            if condition_json.__contains__('write_area'):
+                write_area = [condition_json['write_area']['x'], condition_json['write_area']['y'],
+                              condition_json['write_area']['width'], condition_json['write_area']['height']]
+            else:
+                write_area = ['x', 'y', 'w', 'h']
             move_method = condition_json["move_method"]
             # move_update = condition_json["move_update"]
             move_update = '0'
             x_range = []
             y_range = []
             if (not condition_json.__contains__('x_range')) and (not condition_json.__contains__('y_range')):
-                print('need control range')
-                exit()
-            if condition_json.__contains__('x_range'):
+                raise JsonException('need control range')
+            if condition_json.__contains__('x_range') and not condition_json["x_range"]["min"] == '':
                 try:
                     x_range = [parse_position(condition_json["x_range"]["min"]),
                                parse_position(condition_json["x_range"]["max"])]
                 except KeyError:
-                    print('wrong x range')
-                    exit()
+                    raise JsonException('wrong x range')
 
-            if condition_json.__contains__('y_range'):
+            if condition_json.__contains__('y_range') and not condition_json["y_range"]["min"] == '':
                 try:
                     y_range = [parse_position(condition_json["y_range"]["min"]),
                                parse_position(condition_json["y_range"]["max"])]
                 except KeyError:
-                    print('wrong y range')
-                    exit()
+                    raise JsonException('wrong y range')
 
             if not condition_json.__contains__('constrain'):
                 conditions.append(
@@ -785,12 +814,13 @@ def get_comp_by_json(path):
                      control_name, condition_json['constrain']])
 
     h_code = get_h(original_name, control, conditions)
-    cpp_code = get_cpp_code(control, original_name, path, conditions)
+    cpp_code = get_cpp_code(control, original_name, path, conditions, write_area)
     generate_file(original_name, h_code, cpp_code)
 
     # for ctr in conditions:
     #     controls_arr_for_svg.append([ctr[4], ctr[0][0], ctr[0][1]])
-    return [generateSVG.generateSVG(original_name, path, controls_arr_for_svg,'cpp'),original_name, path, controls_arr_for_svg]
+    return [generateSVG.generateSVG(original_name, path, write_area, controls_arr_for_svg, 'cpp'), original_name, path,
+            write_area, controls_arr_for_svg]
 
 
 # get_path(path)

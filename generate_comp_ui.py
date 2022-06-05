@@ -27,6 +27,8 @@
 # from tkinter import Canvas, Label
 # from functools import partial
 #
+import json
+
 import tksvg
 
 #
@@ -184,8 +186,8 @@ import tksvg
 import tkinter as tk
 
 print(tk.CURRENT)
-x = 50
-y = 50
+offset_x = 50
+offset_y = 50
 
 
 class Block():
@@ -199,9 +201,8 @@ class Block():
         # self.item_ids.append(oval2)
         # self.set_item_mapping()
 
-    def move_to(self, x: float, y: float):
-        for id in self.item_ids:
-            self.canvas.move_to(id, x, y)
+    def move_to(self, id: int, x: float, y: float):
+        self.canvas.move_to(id, x, y)
 
     def set_item_mapping(self):
         for id in self.item_ids:
@@ -244,76 +245,274 @@ class MyCanvas(tk.Canvas):
         a = self.find_withtag(tk.CURRENT)
         if len(a) >= 1:
             if a[0] in self.itemMap:
-
-                # if event.x - self.relativePos[0] >= x + 100:
-                #     self.itemMap[a[0]].move_to(x + 100, event.y - self.relativePos[1])
-                # if event.y - self.relativePos[1] >= y + 100:
-                #     self.itemMap[a[0]].move_to(event.x - self.relativePos[0], y + 100)
-                # if event.x - self.relativePos[0] <= x:
-                #     self.itemMap[a[0]].move_to(x, event.y - self.relativePos[1])
-                # if event.y - self.relativePos[1] <= y:
-                #     self.itemMap[a[0]].move_to(event.x - self.relativePos[0], y)
-                if x + 300 >= event.x - self.relativePos[0] >= x and y + 300 >= event.y - self.relativePos[1] >= y:
-                    self.itemMap[a[0]].move_to(event.x - self.relativePos[0], event.y - self.relativePos[1])
+                if offset_x + 200 >= event.x - self.relativePos[0] >= offset_x and offset_y + 200 >= event.y - \
+                        self.relativePos[1] >= offset_y:
+                    global comp_name, path_d, controls, oval_map, svg_path, wa
+                    self.itemMap[a[0]].move_to(a[0], event.x - self.relativePos[0], event.y - self.relativePos[1])
                     # print(event.x - self.relativePos[0] - x)
+                    ctr_num = get_keys(oval_map, a[0])
                     # TODO
-                    controls[0][1] = str(event.x - self.relativePos[0])
-                    controls[0][2] = str(event.y - self.relativePos[1])
+                    controls[int(ctr_num[0])][1] = str(event.x - self.relativePos[0] - offset_x)
+                    controls[int(ctr_num[0])][2] = str(event.y - self.relativePos[1] - offset_y)
                     import generateSVG
-                    generateSVG.generateSVG(comp_name, path_d, controls, 'update')
+
+                    generateSVG.generateSVG(comp_name, path_d, wa, controls, 'update')
                     global svg_image
                     svg_image.configure(file="./svg/%s.svg" % comp_name)
                     # self.create_image(150 + x, 150 + y, image=svg_image)
 
 
-global comp_name, path_d, controls
+global comp_name, path_d, controls, oval_map, svg_path, wa
 # canvas_width = 190
 # canvas_height = 150
 from generateCpp import get_comp_by_json
 from tkinter.filedialog import *
 
-master = tk.Tk()
-filepath = askopenfilename()
+
 # print(filepath)
 
 
+def get_keys(d, value):
+    return [k for k, v in d.items() if v == value]
+
+
+from tkinter import ttk
+
+master = tk.Tk()
+master.geometry("320x600")
+canvas = Canvas(master, scrollregion=(0, 0, 300, 900), height=600)  # 创建canvas
+canvas.place(x=300, y=800)
+frame1 = tk.Frame(canvas)
+frame1.place(width=300, height=800)
+vbar = Scrollbar(canvas, orient=VERTICAL)  # 竖直滚动条
+vbar.place(x=300, width=20, height=800)
+vbar.configure(command=canvas.yview)
+canvas.config(yscrollcommand=vbar.set)  # 设置
+canvas.create_window((150, 450), window=frame1)  # create_window
+canvas.pack()
+filepath = askopenfilename()
 
 print(filepath)
 filepath = filepath.replace('/', '\\\\')
-if filepath[-4:] == 'json':
-    print(filepath[-4:])
-    [svg_path, comp_name, path_d, controls] = get_comp_by_json(filepath)
+jsonfile = open(filepath)
+input_json = jsonfile.read()
+jsonfile.close()
+data = json.loads(input_json)
+print('input_json in ui:' + input_json)
+labels = []
+entries = []
 
-    # controls = parse_control_pos(controls)
-    # path.replace('\\','\\\\')
-    print("controls in ui" + str(controls))
-    print(svg_path)
+l_comp_name = Label(frame1, text='组件名')
+comp_name_str = tk.StringVar()
+comp_name_str.set(value=data['name'])
+e1 = Entry(frame1, bd=5, width=30, textvariable=comp_name_str)
+labels.append(l_comp_name)
+entries.append(e1)
 
-    svg_image = tksvg.SvgImage(file=svg_path)
-    w = MyCanvas(master, bg='white')
-    #
-    w.create_image(100 + x, 100 + y, image=svg_image)
-    ovals = []
-    oval_map={}
-    for ctr in controls:
-        oval = w.create_oval(eval(ctr[1]) - 3 + x, eval(ctr[2]) - 3 + y, eval(ctr[1]) + 3 + x, eval(ctr[2]) + 3 + y, fill='orange')
-        # oval.id = ctr[0]
-        ovals.append(oval)
-        oval_map.update(oval,ctr[0])
+l_path = Label(frame1, text='path')
+path_str = tk.StringVar()
+path_str.set(data['path'])
+e2 = Entry(frame1, bd=5, state=NORMAL, textvariable=path_str)
+labels.append(l_path)
+entries.append(e2)
 
-    # oval = w.create_oval(222 - 3 + x, 72 - 3 + y, 228 + 3 + x, 78 + 3 + y, fill='orange')
-    # ovals.append(oval)
+if data.__contains__('write_area'):
+    l_write_area_x = Label(frame1, text='write_area:x')
+    write_area_x_str = tk.StringVar()
+    write_area_x_str.set(data['write_area']['x'])
+    e3 = Entry(frame1, bd=5, state=NORMAL, textvariable=write_area_x_str)
+    labels.append(l_write_area_x)
+    entries.append(e3)
 
-    #
-    w.pack(fill=tk.BOTH, expand=1)
-    #
-    # print(w.find_all())
-    b = Block(w)
-    for oval in ovals:
-        b.item_ids.append(oval)
-    # b.item_ids.append(oval)
-    b.set_item_mapping()
-    #
-    tk.mainloop()
-else:
-    exit()
+    l_write_area_y = Label(frame1, text='write_area:y')
+    write_area_y_str = tk.StringVar()
+    write_area_y_str.set(data['write_area']['y'])
+    e4 = Entry(frame1, bd=5, state=NORMAL, textvariable=write_area_y_str)
+    labels.append(l_write_area_y)
+    entries.append(e4)
+
+    l_write_area_w = Label(frame1, text='write_area:w')
+    write_area_w_str = tk.StringVar()
+    write_area_w_str.set(data['write_area']['width'])
+    e5 = Entry(frame1, bd=5, state=NORMAL, textvariable=write_area_w_str)
+    labels.append(l_write_area_w)
+    entries.append(e5)
+
+    l_write_area_h = Label(frame1, text='write_area:h')
+    write_area_h_str = tk.StringVar()
+    write_area_h_str.set(data['write_area']['height'])
+    e6 = Entry(frame1, bd=5, state=NORMAL, textvariable=write_area_h_str)
+    labels.append(l_write_area_h)
+    entries.append(e6)
+
+for i in range(len(labels)):
+    labels[i].pack()
+    entries[i].pack()
+
+control_texts = ["control_name", "default_position:x", "default_position:y", "move_method", "x_range:min",
+                 "x_range:max", "y_range:min", "y_range:max"]
+control_entries = []
+control_labels = []
+control_strvs = []
+
+if data.__contains__('control_point_num'):
+    print('data[control_point_num]:' + data['control_point_num'])
+    if not int(data['control_point_num']) == 0:
+        ctr_num = int(data['control_point_num'])
+        for j in range(ctr_num):
+            ctr = data['controls'][j]
+            ctrs = [ctr['control_name'], ctr['default_position']['default_x'], ctr['default_position']['default_y'],
+                    ctr['move_method'], ctr['x_range']['min'], ctr['x_range']['max'], ctr['y_range']['min'],
+                    ctr['y_range']['max']]
+            control_entries.append([])
+            control_labels.append([])
+            control_strvs.append([])
+            for k in range(len(control_texts)):
+                control_labels[j].append(Label(frame1, text=control_texts[k]))
+                control_strvs[j].append(StringVar())
+                control_strvs[j][k].set(ctrs[k])
+                control_entries[j].append(Entry(frame1, textvariable=control_strvs[j][k]))
+        for j in range(ctr_num):
+            for k in range(len(control_texts)):
+                # if 1<=k<=2:
+                #     control_labels[j][k].pack(side=LEFT)
+                #     control_entries[j][k].pack(side=LEFT)
+                # else:
+                #     control_labels[j][k].pack(side=TOP)
+                #     control_entries[j][k].pack(side=TOP)
+                control_labels[j][k].pack(side=TOP)
+                control_entries[j][k].pack(side=TOP)
+
+# add_control_btn = tk.Button(text='增加控制点')
+# add_control_btn.pack()
+global master2
+master2 = None
+import tkinter.messagebox
+
+
+def save_json():
+    global master2
+    data['name'] = comp_name_str.get()
+    data['path'] = path_str.get()
+    if data.__contains__('write_area'):
+        data['write_area']['x'] = write_area_x_str.get()
+        data['write_area']['y'] = write_area_y_str.get()
+        data['write_area']['width'] = write_area_w_str.get()
+        data['write_area']['height'] = write_area_h_str.get()
+
+    if data.__contains__('controls'):
+        for j in range(len(data['controls'])):
+            data['controls'][j]['control_name'] = control_strvs[j][0].get()
+            data['controls'][j]['default_position']['default_x'] = control_strvs[j][1].get()
+            data['controls'][j]['default_position']['default_y'] = control_strvs[j][2].get()
+            data['controls'][j]['move_method'] = control_strvs[j][3].get()
+            data['controls'][j]['x_range']['min'] = control_strvs[j][4].get()
+            data['controls'][j]['x_range']['max'] = control_strvs[j][5].get()
+            data['controls'][j]['y_range']['min'] = control_strvs[j][6].get()
+            data['controls'][j]['y_range']['max'] = control_strvs[j][7].get()
+
+    print(data)
+    newjson = json.dumps(data)
+    json_file = open(filepath, 'w+')
+    json_file.write(newjson)
+    json_file.close()
+    # for i in frame1.winfo_children():
+    #     i.destroy()
+    # frame1.destroy()
+    if filepath[-4:] == 'json':
+        if not master2 == None:
+            master2.destroy()
+        global comp_name, path_d, controls, oval_map, svg_path, svg_image, wa
+        print(filepath[-4:])
+        try:
+            [svg_path, comp_name, path_d, wa, controls] = get_comp_by_json(filepath)
+        except Exception as e:
+            tk.messagebox.showinfo(title='JsonError', message=e)
+            return
+        master2 = tk.Toplevel()
+
+        # controls = parse_control_pos(controls)
+        # path.replace('\\','\\\\')
+        print("controls in ui" + str(controls))
+        print(svg_path)
+
+        svg_image = tksvg.SvgImage(file=svg_path)
+        w = MyCanvas(master2, bg='white')
+        #
+        w.create_image(100 + offset_x, 100 + offset_y, image=svg_image)
+        ovals = []
+        oval_map = {}
+        for i in range(len(controls)):
+            ctr = controls[i]
+            oval = w.create_oval(eval(ctr[1]) - 3 + offset_x, eval(ctr[2]) - 3 + offset_y, eval(ctr[1]) + 3 + offset_x,
+                                 eval(ctr[2]) + 3 + offset_y,
+                                 fill='orange')
+            # oval.id = ctr[0]
+            ovals.append(oval)
+            oval_map[str(i)] = oval
+
+        # oval = w.create_oval(222 - 3 + x, 72 - 3 + y, 228 + 3 + x, 78 + 3 + y, fill='orange')
+        # ovals.append(oval)
+
+        #
+        w.pack(fill=tk.BOTH, expand=1)
+        #
+        # print(w.find_all())
+        b = Block(w)
+        for oval in ovals:
+            b.item_ids.append(oval)
+        # b.item_ids.append(oval)
+        b.set_item_mapping()
+        #
+        # tk.mainloop()
+        master2.mainloop()
+    else:
+        exit()
+
+
+save_control_btn = tk.Button(frame1, text='确认配置', command=save_json)
+save_control_btn.pack()
+# frame1.pack()
+#
+# if filepath[-4:] == 'json':
+#
+#     print(filepath[-4:])
+#     [svg_path, comp_name, path_d, controls] = get_comp_by_json(filepath)
+#
+#     # controls = parse_control_pos(controls)
+#     # path.replace('\\','\\\\')
+#     print("controls in ui" + str(controls))
+#     print(svg_path)
+#
+#     svg_image = tksvg.SvgImage(file=svg_path)
+#     w = MyCanvas(master, bg='white')
+#     #
+#     w.create_image(100 + offset_x, 100 + offset_y, image=svg_image)
+#     ovals = []
+#     oval_map = {}
+#     for i in range(len(controls)):
+#         ctr = controls[i]
+#         oval = w.create_oval(eval(ctr[1]) - 3 + offset_x, eval(ctr[2]) - 3 + offset_y, eval(ctr[1]) + 3 + offset_x,
+#                              eval(ctr[2]) + 3 + offset_y,
+#                              fill='orange')
+#         # oval.id = ctr[0]
+#         ovals.append(oval)
+#         oval_map[str(i)] = oval
+#
+#     # oval = w.create_oval(222 - 3 + x, 72 - 3 + y, 228 + 3 + x, 78 + 3 + y, fill='orange')
+#     # ovals.append(oval)
+#
+#     #
+#     w.pack(fill=tk.BOTH, expand=1)
+#     #
+#     # print(w.find_all())
+#     b = Block(w)
+#     for oval in ovals:
+#         b.item_ids.append(oval)
+#     # b.item_ids.append(oval)
+#     b.set_item_mapping()
+#     #
+#     # tk.mainloop()
+# else:
+#     exit()
+tk.mainloop()
