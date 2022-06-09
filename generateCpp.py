@@ -50,7 +50,7 @@ def parse_constrain(constrain):
     variables = regex.findall(constrain)
     if not len(variables) == 0:
         for v in variables:
-            print(v)
+            # print(v)
             constrain = re.sub("\\." + v[1:], '->get%s()' % v[1:].upper(), constrain)
     constrain = re.sub('\\$width', 'getWidth()', constrain)
     constrain = re.sub('\\$height', 'getHeight()', constrain)
@@ -59,7 +59,7 @@ def parse_constrain(constrain):
     variables = regex.findall(constrain)
     if not len(variables) == 0:
         for v in variables:
-            print(v)
+            # print(v)
             constrain = re.sub('\\$' + v[1:], 'get%s()' % v[1:].upper(), constrain)
     constrain = re.sub("\\$", '', constrain)
     return constrain
@@ -546,9 +546,8 @@ def parse_points(path_str):
             points_num += 1
             i += 8
         else:
-            print('error symbol')
-            exit()
-    # print(input_points)
+            raise JsonException('error symbol')
+            # print(input_points)
 
 
 # 讲已得到的航点生成代码（getPath方法体）
@@ -601,8 +600,8 @@ def trans_points2code(points):
                 p0[1], p0[4], p0[5], p0[6], p0[7], p0[8], p0[0], p0[0])
             i += 1
         else:
-            print('error symbol')
-            exit()
+            raise JsonException('error symbol')
+
     # output += ss_code1 % ()
     # print(output)
     output += '''        return ss.str();\n'''
@@ -629,12 +628,12 @@ def generate_file(original_name, h_code, cpp_code):
     with open(original_name + '.cpp', 'w+', encoding='utf-8') as f:
         f.write(cpp_code)
     f.close()
-    print('#include "comp_custom/%s.h"\n' % original_name)
-    print('''std::function<std::shared_ptr<ComponentAbstract>()> new%s = []()
-    {
-         return std::dynamic_pointer_cast<ComponentAbstract>(std::make_shared<%s>());
-    };''' % (class_name, class_name))
-    print('{"%s",new%s},\n' % (original_name, class_name))
+    # print('#include "comp_custom/%s.h"\n' % original_name)
+    # print('''std::function<std::shared_ptr<ComponentAbstract>()> new%s = []()
+    # {
+    #      return std::dynamic_pointer_cast<ComponentAbstract>(std::make_shared<%s>());
+    # };''' % (class_name, class_name))
+    # print('{"%s",new%s},\n' % (original_name, class_name))
 
 
 def default_generate():
@@ -813,9 +812,9 @@ def get_comp_by_json(path):
                     [control_position, [move_method, move_update], x_range, y_range,
                      control_name, condition_json['constrain']])
 
-    h_code = get_h(original_name, control, conditions)
-    cpp_code = get_cpp_code(control, original_name, path, conditions, write_area)
-    generate_file(original_name, h_code, cpp_code)
+    # h_code = get_h(original_name, control, conditions)
+    # cpp_code = get_cpp_code(control, original_name, path, conditions, write_area)
+    # generate_file(original_name, h_code, cpp_code)
 
     # for ctr in conditions:
     #     controls_arr_for_svg.append([ctr[4], ctr[0][0], ctr[0][1]])
@@ -826,6 +825,6 @@ def get_comp_by_json(path):
 # get_path(path)
 global control
 global control_num
-if __name__ == "__main__":
-    # main(sys.argv[1:])
-    main(['-j', 'big_arrow_left.json'])
+# if __name__ == "__main__":
+    # # main(sys.argv[1:])
+    # main(['-j', 'big_arrow_left.json'])

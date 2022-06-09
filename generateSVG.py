@@ -1,5 +1,7 @@
 import re
 
+import cairosvg
+
 SVG_PATH = '.\\svg\\'
 global sym2num
 
@@ -25,7 +27,7 @@ def parse_control_pos(controls):
             else:
                 # clength = 'y'
                 controls[j][i] = sym2num[d[0]]
-    print("controls in svg:" + str(controls))
+    # print("controls in svg:" + str(controls))
     return controls
 
 
@@ -130,7 +132,7 @@ def generateSVG(comp, path, write_area, controls, flag):
     arr = path.split(' ')
     if flag == 'cpp':
         controls = parse_control_pos(controls)
-    print('arr in svg' + str(arr))
+    # print('arr in svg' + str(arr))
     for sym in arr:
         if sym not in ['M', 'A', 'C', 'L', 'Q', 'S']:
             arr[arr.index(sym)] = parse_position(sym, controls)
@@ -141,7 +143,7 @@ def generateSVG(comp, path, write_area, controls, flag):
     for sym in arr:
         out += str(sym)
         out += ' '
-    return generate_file(comp, out, write_area, controls)
+    return generate_file(comp, out, write_area, controls, flag)
 
 
 '''
@@ -157,35 +159,38 @@ control.h:control->getY()-getY():0+100*px
 import os
 
 
-def generate_file(comp_name, path, wa, controls):
+def generate_file(comp_name, path, wa, controls, flag):
     svg = '''<svg xmlns="http://www.w3.org/2000/svg">
      <g>
-      <g stroke=" black" fill=" white" stroke-width="1">
-      <rect x="%s" y="%s" width="%s" height="%s fill="none"/>
+      <g stroke=" black" fill=" white" stroke-width="3">
        <path d="%s" id="svg_1"/>
       </g>
      </g>
 
     </svg>''' % (
-        parse_position(wa[0], controls), parse_position(wa[1], controls), parse_position(wa[2], controls),
-        parse_position(wa[3], controls),
+
         path)
     current_path = os.path.abspath(__file__)
     parent_path = os.path.abspath(os.path.dirname(current_path) + os.path.sep + ".")
-    with open(SVG_PATH + comp_name + '.svg', 'w+', encoding='utf-8') as f:
+    # print(parent_path)
+    with open(parent_path + SVG_PATH[1:] + comp_name + '.svg', 'w+', encoding='utf-8') as f:
         f.write(svg)
         # abspath = os.path.abspath(f)
         # abspath = f.__dir__()
     f.close()
     out = parent_path + SVG_PATH[1:] + comp_name + '.svg'
-    print('svg path in svg:' + out)
+    png_path = parent_path + SVG_PATH[1:] + comp_name + '.png'
+
+    if not flag == 'update':
+        cairosvg.svg2png(url=out, write_to=png_path, parent_width=200, parent_height=200, output_width=50,
+                         output_height=50)
+    # print('svg path in svg:' + out)
     return out
 
-
-if __name__ == '__main__':
-    comp_name = 'comp1'
-    controls = [['abc', 'x+w*0.75', 'y+h*0.25'], ['cde', 'x', 'y+h*0.5']]
-    generateSVG(
-        comp_name,
-        'M x abc.y L abc.x abc.y L abc.x y L x+w y+h*0.5 L abc.x y+h L abc.x y+h-abc.h L x y+h-abc.h L cde.x cde.y L x abc.y',
-        ['x', 'y', 'w', 'h'], controls, 'cpp')
+# if __name__ == '__main__':
+#     comp_name = 'comp1'
+#     controls = [['abc', 'x+w*0.75', 'y+h*0.25'], ['cde', 'x', 'y+h*0.5']]
+#     generateSVG(
+#         comp_name,
+#         'M x abc.y L abc.x abc.y L abc.x y L x+w y+h*0.5 L abc.x y+h L abc.x y+h-abc.h L x y+h-abc.h L cde.x cde.y L x abc.y',
+#         ['x', 'y', 'w', 'h'], controls, 'cpp')

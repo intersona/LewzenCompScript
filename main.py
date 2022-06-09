@@ -185,7 +185,9 @@ import tksvg
 
 import tkinter as tk
 
-print(tk.CURRENT)
+from generateJs import read_ori_json
+
+# print(tk.CURRENT)
 offset_x = 50
 offset_y = 50
 
@@ -256,9 +258,9 @@ class MyCanvas(tk.Canvas):
                     controls[int(ctr_num[0])][2] = str(event.y - self.relativePos[1] - offset_y)
                     import generateSVG
 
-                    generateSVG.generateSVG(comp_name, path_d, wa, controls, 'update')
+                    new_svg_path = generateSVG.generateSVG(comp_name, path_d, wa, controls, 'update')
                     global svg_image
-                    svg_image.configure(file="./svg/%s.svg" % comp_name)
+                    svg_image.configure(file=new_svg_path)
                     # self.create_image(150 + x, 150 + y, image=svg_image)
 
 
@@ -274,120 +276,6 @@ from tkinter.filedialog import *
 
 def get_keys(d, value):
     return [k for k, v in d.items() if v == value]
-
-
-from tkinter import ttk
-
-master = tk.Tk()
-master.geometry("320x600")
-canvas = Canvas(master, scrollregion=(0, 0, 300, 900), height=600)  # 创建canvas
-canvas.place(x=300, y=800)
-frame1 = tk.Frame(canvas)
-frame1.place(width=300, height=800)
-vbar = Scrollbar(canvas, orient=VERTICAL)  # 竖直滚动条
-vbar.place(x=300, width=20, height=800)
-vbar.configure(command=canvas.yview)
-canvas.config(yscrollcommand=vbar.set)  # 设置
-canvas.create_window((150, 450), window=frame1)  # create_window
-canvas.pack()
-filepath = askopenfilename()
-
-print(filepath)
-filepath = filepath.replace('/', '\\\\')
-jsonfile = open(filepath)
-input_json = jsonfile.read()
-jsonfile.close()
-data = json.loads(input_json)
-print('input_json in ui:' + input_json)
-labels = []
-entries = []
-
-l_comp_name = Label(frame1, text='组件名')
-comp_name_str = tk.StringVar()
-comp_name_str.set(value=data['name'])
-e1 = Entry(frame1, bd=5, width=30, textvariable=comp_name_str)
-labels.append(l_comp_name)
-entries.append(e1)
-
-l_path = Label(frame1, text='path')
-path_str = tk.StringVar()
-path_str.set(data['path'])
-e2 = Entry(frame1, bd=5, state=NORMAL, textvariable=path_str)
-labels.append(l_path)
-entries.append(e2)
-
-if data.__contains__('write_area'):
-    l_write_area_x = Label(frame1, text='write_area:x')
-    write_area_x_str = tk.StringVar()
-    write_area_x_str.set(data['write_area']['x'])
-    e3 = Entry(frame1, bd=5, state=NORMAL, textvariable=write_area_x_str)
-    labels.append(l_write_area_x)
-    entries.append(e3)
-
-    l_write_area_y = Label(frame1, text='write_area:y')
-    write_area_y_str = tk.StringVar()
-    write_area_y_str.set(data['write_area']['y'])
-    e4 = Entry(frame1, bd=5, state=NORMAL, textvariable=write_area_y_str)
-    labels.append(l_write_area_y)
-    entries.append(e4)
-
-    l_write_area_w = Label(frame1, text='write_area:w')
-    write_area_w_str = tk.StringVar()
-    write_area_w_str.set(data['write_area']['width'])
-    e5 = Entry(frame1, bd=5, state=NORMAL, textvariable=write_area_w_str)
-    labels.append(l_write_area_w)
-    entries.append(e5)
-
-    l_write_area_h = Label(frame1, text='write_area:h')
-    write_area_h_str = tk.StringVar()
-    write_area_h_str.set(data['write_area']['height'])
-    e6 = Entry(frame1, bd=5, state=NORMAL, textvariable=write_area_h_str)
-    labels.append(l_write_area_h)
-    entries.append(e6)
-
-for i in range(len(labels)):
-    labels[i].pack()
-    entries[i].pack()
-
-control_texts = ["control_name", "default_position:x", "default_position:y", "move_method", "x_range:min",
-                 "x_range:max", "y_range:min", "y_range:max"]
-control_entries = []
-control_labels = []
-control_strvs = []
-
-if data.__contains__('control_point_num'):
-    print('data[control_point_num]:' + data['control_point_num'])
-    if not int(data['control_point_num']) == 0:
-        ctr_num = int(data['control_point_num'])
-        for j in range(ctr_num):
-            ctr = data['controls'][j]
-            ctrs = [ctr['control_name'], ctr['default_position']['default_x'], ctr['default_position']['default_y'],
-                    ctr['move_method'], ctr['x_range']['min'], ctr['x_range']['max'], ctr['y_range']['min'],
-                    ctr['y_range']['max']]
-            control_entries.append([])
-            control_labels.append([])
-            control_strvs.append([])
-            for k in range(len(control_texts)):
-                control_labels[j].append(Label(frame1, text=control_texts[k]))
-                control_strvs[j].append(StringVar())
-                control_strvs[j][k].set(ctrs[k])
-                control_entries[j].append(Entry(frame1, textvariable=control_strvs[j][k]))
-        for j in range(ctr_num):
-            for k in range(len(control_texts)):
-                # if 1<=k<=2:
-                #     control_labels[j][k].pack(side=LEFT)
-                #     control_entries[j][k].pack(side=LEFT)
-                # else:
-                #     control_labels[j][k].pack(side=TOP)
-                #     control_entries[j][k].pack(side=TOP)
-                control_labels[j][k].pack(side=TOP)
-                control_entries[j][k].pack(side=TOP)
-
-# add_control_btn = tk.Button(text='增加控制点')
-# add_control_btn.pack()
-global master2
-master2 = None
-import tkinter.messagebox
 
 
 def save_json():
@@ -411,9 +299,10 @@ def save_json():
             data['controls'][j]['y_range']['min'] = control_strvs[j][6].get()
             data['controls'][j]['y_range']['max'] = control_strvs[j][7].get()
 
-    print(data)
+    # print(data)
     newjson = json.dumps(data)
     json_file = open(filepath, 'w+')
+    print('filepath:' + filepath)
     json_file.write(newjson)
     json_file.close()
     # for i in frame1.winfo_children():
@@ -423,18 +312,46 @@ def save_json():
         if not master2 == None:
             master2.destroy()
         global comp_name, path_d, controls, oval_map, svg_path, svg_image, wa
-        print(filepath[-4:])
+        # print(filepath[-4:])
         try:
             [svg_path, comp_name, path_d, wa, controls] = get_comp_by_json(filepath)
+            read_ori_json(filepath)
+            print('svg_path:' + svg_path)
         except Exception as e:
             tk.messagebox.showinfo(title='JsonError', message=e)
             return
+        current_path = os.path.abspath(__file__)
+        parent_path = os.path.abspath(os.path.dirname(current_path) + os.path.sep + ".")
+        print(parent_path)
+        config_path = parent_path + '\\newjson\\config.json'
+        config_file = open(config_path)
+        config_json = config_file.read()
+        config_file.close()
+        # print(config_json)
+        config_dict = json.loads(config_json)
+        config_url = '../main/newjson/%s_js.json' % comp_name
+        config_svg = '../main/svg/%s.png' % comp_name
+        flag = True
+        for comp in config_dict['component']:
+            if comp['url'] == config_url:
+                flag = False
+
+        if flag:
+            config_dict['component'].append(
+                {"url": config_url, "svg": config_svg})
+
+        output_config_json = json.dumps(config_dict)
+        config_file = open(config_path, 'w+')
+        config_file.write(output_config_json)
+        config_file.close()
+
         master2 = tk.Toplevel()
+        master2.title('组件预览')
 
         # controls = parse_control_pos(controls)
         # path.replace('\\','\\\\')
-        print("controls in ui" + str(controls))
-        print(svg_path)
+        # print("controls in ui" + str(controls))
+        # print(svg_path)
 
         svg_image = tksvg.SvgImage(file=svg_path)
         w = MyCanvas(master2, bg='white')
@@ -470,8 +387,130 @@ def save_json():
         exit()
 
 
-save_control_btn = tk.Button(frame1, text='确认配置', command=save_json)
-save_control_btn.pack()
+global master2
+master2 = None
+import tkinter.messagebox
+
+from tkinter import ttk
+
+if __name__ == '__main__':
+
+    master = tk.Tk()
+    master.geometry("320x600")
+    master.title('设置您的组件')
+    canvas = Canvas(master, scrollregion=(0, 0, 300, 1300), height=900)  # 创建canvas
+    canvas.place(x=300, y=800)
+    frame1 = tk.Frame(canvas)
+    frame1.place(width=300, height=800)
+    vbar = Scrollbar(canvas, orient=VERTICAL)  # 竖直滚动条
+    vbar.place(x=300, width=20, height=800)
+    vbar.configure(command=canvas.yview)
+    canvas.config(yscrollcommand=vbar.set)  # 设置
+    canvas.create_window((150, 550), window=frame1)  # create_window
+    canvas.pack()
+    filepath = askopenfilename()
+
+    # print(filepath)
+    # filepath = filepath.replace('/', '\\\\')
+    jsonfile = open(filepath)
+    input_json = jsonfile.read()
+    # print(input_json)
+    jsonfile.close()
+    data = json.loads(input_json)
+    # print('input_json in ui:' + input_json)
+    labels = []
+    entries = []
+
+    l_comp_name = Label(frame1, text='组件名')
+    comp_name_str = tk.StringVar()
+    comp_name_str.set(value=data['name'])
+    e1 = Entry(frame1, width=30, textvariable=comp_name_str)
+    labels.append(l_comp_name)
+    entries.append(e1)
+
+    l_path = Label(frame1, text='path')
+    path_str = tk.StringVar()
+    path_str.set(data['path'])
+    e2 = Entry(frame1, state=NORMAL, width=30, textvariable=path_str)
+    labels.append(l_path)
+    entries.append(e2)
+
+    if data.__contains__('write_area'):
+        l_write_area_x = Label(frame1, text='write_area:x')
+        write_area_x_str = tk.StringVar()
+        write_area_x_str.set(data['write_area']['x'])
+        e3 = Entry(frame1, state=NORMAL, width=30, textvariable=write_area_x_str)
+        labels.append(l_write_area_x)
+        entries.append(e3)
+
+        l_write_area_y = Label(frame1, text='write_area:y')
+        write_area_y_str = tk.StringVar()
+        write_area_y_str.set(data['write_area']['y'])
+        e4 = Entry(frame1, state=NORMAL, width=30, textvariable=write_area_y_str)
+        labels.append(l_write_area_y)
+        entries.append(e4)
+
+        l_write_area_w = Label(frame1, text='write_area:w')
+        write_area_w_str = tk.StringVar()
+        write_area_w_str.set(data['write_area']['width'])
+        e5 = Entry(frame1, state=NORMAL, width=30, textvariable=write_area_w_str)
+        labels.append(l_write_area_w)
+        entries.append(e5)
+
+        l_write_area_h = Label(frame1, text='write_area:h')
+        write_area_h_str = tk.StringVar()
+        write_area_h_str.set(data['write_area']['height'])
+        e6 = Entry(frame1, state=NORMAL, width=30, textvariable=write_area_h_str)
+        labels.append(l_write_area_h)
+        entries.append(e6)
+
+    for i in range(len(labels)):
+        labels[i].pack()
+        entries[i].pack()
+
+    control_texts = ["control_name", "default_position:x", "default_position:y", "move_method", "x_range:min",
+                     "x_range:max", "y_range:min", "y_range:max"]
+    control_entries = []
+    control_labels = []
+    control_strvs = []
+
+    if data.__contains__('control_point_num'):
+        # print('data[control_point_num]:' + data['control_point_num'])
+        if not int(data['control_point_num']) == 0:
+            ctr_num = int(data['control_point_num'])
+            for j in range(ctr_num):
+                ctr = data['controls'][j]
+                try:
+                    ctrs = [ctr['control_name'], ctr['default_position']['default_x'],
+                            ctr['default_position']['default_y'],
+                            ctr['move_method'], ctr['x_range']['min'], ctr['x_range']['max'], ctr['y_range']['min'],
+                            ctr['y_range']['max']]
+                except:
+                    tk.messagebox.showinfo(title='JsonError', message='json数据不完整')
+                control_entries.append([])
+                control_labels.append([])
+                control_strvs.append([])
+                for k in range(len(control_texts)):
+                    control_labels[j].append(Label(frame1, text=control_texts[k]))
+                    control_strvs[j].append(StringVar())
+                    control_strvs[j][k].set(ctrs[k])
+                    control_entries[j].append(Entry(frame1,width=30, textvariable=control_strvs[j][k]))
+            for j in range(ctr_num):
+                for k in range(len(control_texts)):
+                    # if 1<=k<=2:
+                    #     control_labels[j][k].pack(side=LEFT)
+                    #     control_entries[j][k].pack(side=LEFT)
+                    # else:
+                    #     control_labels[j][k].pack(side=TOP)
+                    #     control_entries[j][k].pack(side=TOP)
+                    control_labels[j][k].pack(side=TOP)
+                    control_entries[j][k].pack(side=TOP)
+
+    save_control_btn = tk.Button(frame1, text='确认配置', command=save_json)
+    save_control_btn.pack()
+
+    tk.mainloop()
+
 # frame1.pack()
 #
 # if filepath[-4:] == 'json':
@@ -515,4 +554,3 @@ save_control_btn.pack()
 #     # tk.mainloop()
 # else:
 #     exit()
-tk.mainloop()
